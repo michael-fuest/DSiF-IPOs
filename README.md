@@ -1,2 +1,2 @@
 # DSiF-IPOs
-An analysis of IPO firm characteristics and drivers of underperformance
+An analysis of IPO firm characteristics and drivers of IPO underperformance.
