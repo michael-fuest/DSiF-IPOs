@@ -10,10 +10,10 @@ path = './data/'
 largefile = 'master_data.csv'
 df = pd.read_csv(path + largefile, index_col= 'ipoDate')
 
-print('Data read in successfully!')
+
 
 #Dropping Symbol column
-df.drop('Symbol', inplace=True, axis = 1)
+df.drop(columns=['Symbol', 'index'], inplace=True, axis = 1)
 
 #One hot encoding sector and weekday cols
 categorical_cols = ['sector', 'IPO_weekday'] 
@@ -66,7 +66,7 @@ from sklearn.model_selection import RandomizedSearchCV
 #Taken from https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74
 
 # Number of trees in random forest
-n_estimators = [int(x) for x in np.linspace(start = 100, stop = 2000, num = 10)]
+n_estimators = [int(x) for x in np.linspace(start = 100, stop = 1500, num = 10)]
 # Maximum number of levels in tree
 max_depth = [int(x) for x in np.linspace(10, 110, num = 11)]
 max_depth.append(None)
@@ -96,7 +96,7 @@ rf_random_d = RandomizedSearchCV(estimator = rf_d, param_distributions = random_
 rf_random_w = RandomizedSearchCV(estimator = rf_w, param_distributions = random_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
 rf_random_m = RandomizedSearchCV(estimator = rf_m, param_distributions = random_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
 
-print('here')
+print('Starting randomized grid search for random forest classifier...')
 
 # Fit all random search models
 rf_random_d.fit(X_d_train, y_d_train)
@@ -124,7 +124,7 @@ xgb_m = XGBClassifier(objective="binary:logistic")
 
 #Defining search grid for randomized search
 param_grid = {
-    "max_depth": [int(x) for x in np.linspace(10, 200, num = 20)],
+    "max_depth": [int(x) for x in np.linspace(10, 110, num = 20)],
     "learning_rate": [0.1, 0.01, 0.05, 0.2, 0.25, 0.3],
     "gamma": [0, 0.1, 0.25, 0.5, 1],
     "reg_lambda": [0, 1, 2, 5, 10],
@@ -134,12 +134,15 @@ param_grid = {
 }
 
 #Fitting randomized search to XGB models
-xgb_random_d = RandomizedSearchCV(estimator = xgb_d, param_distributions = param_grid, n_iter = 200, cv = 10, random_state=42, n_jobs = -1)
-xgb_random_w = RandomizedSearchCV(estimator = xgb_w, param_distributions = param_grid, n_iter = 200, cv = 10, random_state=42, n_jobs = -1)
-xgb_random_m = RandomizedSearchCV(estimator = xgb_m, param_distributions = param_grid, n_iter = 200, cv = 10, random_state=42, n_jobs = -1)
+xgb_random_d = RandomizedSearchCV(estimator = xgb_d, param_distributions = param_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
+xgb_random_w = RandomizedSearchCV(estimator = xgb_w, param_distributions = param_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
+xgb_random_m = RandomizedSearchCV(estimator = xgb_m, param_distributions = param_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
+
+print('Starting randomized grid search for XGboost classifier...')
 
 #Fitting search to training data
 xgb_random_d.fit(X_d_train, y_d_train)
+
 xgb_random_w.fit(X_w_train, y_w_train)
 xgb_random_m.fit(X_m_train, y_m_train)
 
@@ -202,6 +205,7 @@ log_results.accuracy = [accuracy_score(y_d_test, log_pred_d), accuracy_score(y_w
 log_results.balanced_accuracy = [balanced_accuracy_score(y_d_test, log_pred_d), balanced_accuracy_score(y_w_test, log_pred_w), balanced_accuracy_score(y_m_test, log_pred_m)]
 log_results.top_5_features = [log_d_importance.nlargest(5).index.tolist(), log_w_importance.nlargest(5).index.tolist(), log_m_importance.nlargest(5).index.tolist()]
 log_results.pred_label = ['intra day underperformance', 'in-week underperformance', 'in-month underperformance']
+
 
 
 print(pd.concat([rf_results, xgb_results, log_results], axis = 0))
