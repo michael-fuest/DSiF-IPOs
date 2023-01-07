@@ -11,7 +11,7 @@ largefile = 'master_data.csv'
 df = pd.read_csv(path + largefile, index_col= 'ipoDate')
 
 #Dropping Symbol column
-df.drop(columns=['Symbol', 'index'], inplace=True, axis = 1)
+df.drop(columns=['Symbol', 'index', 'Name'], inplace=True, axis = 1)
 
 #One hot encoding sector and weekday cols
 categorical_cols = ['sector', 'IPO_weekday'] 
