@@ -10,8 +10,6 @@ path = './data/'
 largefile = 'master_data.csv'
 df = pd.read_csv(path + largefile, index_col= 'ipoDate')
 
-
-
 #Dropping Symbol column
 df.drop(columns=['Symbol', 'index'], inplace=True, axis = 1)
 
@@ -68,7 +66,7 @@ from sklearn.model_selection import RandomizedSearchCV
 # Number of trees in random forest
 n_estimators = [int(x) for x in np.linspace(start = 100, stop = 1500, num = 10)]
 # Maximum number of levels in tree
-max_depth = [int(x) for x in np.linspace(10, 110, num = 11)]
+max_depth = [int(x) for x in np.linspace(10, 200, num = 10)]
 max_depth.append(None)
 # Minimum number of samples required to split a node
 min_samples_split = [2, 5, 10]
@@ -92,9 +90,9 @@ rf_m = RandomForestClassifier()
 
 # Random search of parameters, using 10 fold cross validation, 
 # search across 50 different combinations, and use all available cores
-rf_random_d = RandomizedSearchCV(estimator = rf_d, param_distributions = random_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
-rf_random_w = RandomizedSearchCV(estimator = rf_w, param_distributions = random_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
-rf_random_m = RandomizedSearchCV(estimator = rf_m, param_distributions = random_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
+rf_random_d = RandomizedSearchCV(estimator = rf_d, param_distributions = random_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
+rf_random_w = RandomizedSearchCV(estimator = rf_w, param_distributions = random_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
+rf_random_m = RandomizedSearchCV(estimator = rf_m, param_distributions = random_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
 
 print('Starting randomized grid search for random forest classifier...')
 
@@ -134,9 +132,9 @@ param_grid = {
 }
 
 #Fitting randomized search to XGB models
-xgb_random_d = RandomizedSearchCV(estimator = xgb_d, param_distributions = param_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
-xgb_random_w = RandomizedSearchCV(estimator = xgb_w, param_distributions = param_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
-xgb_random_m = RandomizedSearchCV(estimator = xgb_m, param_distributions = param_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
+xgb_random_d = RandomizedSearchCV(estimator = xgb_d, param_distributions = param_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
+xgb_random_w = RandomizedSearchCV(estimator = xgb_w, param_distributions = param_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
+xgb_random_m = RandomizedSearchCV(estimator = xgb_m, param_distributions = param_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
 
 print('Starting randomized grid search for XGboost classifier...')
 
