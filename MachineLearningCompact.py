@@ -29,16 +29,18 @@ from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from sklearn import metrics
 
-X = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up', 'firstday_volume', 'inweek_volume', 'inmonth_volume'])
+X_d = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up', 'firstday_volume', 'inweek_volume'])
+X_w = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up', 'inweek_volume'])
+X_m = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up'])
 y_d = np.array(df.intra_day_up)
 y_w = np.array(df.intra_week_up)
 y_m = np.array(df.intra_month_up)
 
 #Dealing with class imbalances by oversampling minority class (underperforming IPOs)
 sm = SMOTE(random_state=27)
-X_d_bal, y_d_bal = sm.fit_resample(X, y_d)
-X_w_bal, y_w_bal = sm.fit_resample(X, y_w)
-X_m_bal, y_m_bal = sm.fit_resample(X, y_m)
+X_d_bal, y_d_bal = sm.fit_resample(X_d, y_d)
+X_w_bal, y_w_bal = sm.fit_resample(X_w, y_w)
+X_m_bal, y_m_bal = sm.fit_resample(X_m, y_m)
 
 #Model accuracy does not improve substantially with SMOTE, but recall and balanced acc does.
 # setting up stratified testing and training sets
@@ -90,9 +92,9 @@ rf_m = RandomForestClassifier()
 
 # Random search of parameters, using 10 fold cross validation, 
 # search across 50 different combinations, and use all available cores
-rf_random_d = RandomizedSearchCV(estimator = rf_d, param_distributions = random_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
-rf_random_w = RandomizedSearchCV(estimator = rf_w, param_distributions = random_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
-rf_random_m = RandomizedSearchCV(estimator = rf_m, param_distributions = random_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
+rf_random_d = RandomizedSearchCV(estimator = rf_d, param_distributions = random_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
+rf_random_w = RandomizedSearchCV(estimator = rf_w, param_distributions = random_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
+rf_random_m = RandomizedSearchCV(estimator = rf_m, param_distributions = random_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
 
 print('Starting randomized grid search for random forest classifier...')
 
@@ -110,8 +112,8 @@ best_random_m = rf_random_m.best_estimator_
 
 #Creating random model predictions
 rf_predictions_d = best_random_d.predict(X_d_test)
-rf_predictions_w = best_random_d.predict(X_w_test)
-rf_predictions_m = best_random_d.predict(X_m_test)
+rf_predictions_w = best_random_w.predict(X_w_test)
+rf_predictions_m = best_random_m.predict(X_m_test)
 
 from xgboost import XGBClassifier
 
@@ -132,15 +134,14 @@ param_grid = {
 }
 
 #Fitting randomized search to XGB models
-xgb_random_d = RandomizedSearchCV(estimator = xgb_d, param_distributions = param_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
-xgb_random_w = RandomizedSearchCV(estimator = xgb_w, param_distributions = param_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
-xgb_random_m = RandomizedSearchCV(estimator = xgb_m, param_distributions = param_grid, n_iter = 50, cv = 10, random_state=42, n_jobs = -1)
+xgb_random_d = RandomizedSearchCV(estimator = xgb_d, param_distributions = param_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
+xgb_random_w = RandomizedSearchCV(estimator = xgb_w, param_distributions = param_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
+xgb_random_m = RandomizedSearchCV(estimator = xgb_m, param_distributions = param_grid, n_iter = 100, cv = 10, random_state=42, n_jobs = -1)
 
 print('Starting randomized grid search for XGboost classifier...')
 
 #Fitting search to training data
 xgb_random_d.fit(X_d_train, y_d_train)
-
 xgb_random_w.fit(X_w_train, y_w_train)
 xgb_random_m.fit(X_m_train, y_m_train)
 
@@ -153,25 +154,27 @@ best_random_m = xgb_random_m.best_estimator_
 
 #Creating random model predictions
 xgb_predictions_d = best_random_d.predict(X_d_test)
-xgb_predictions_w = best_random_d.predict(X_w_test)
-xgb_predictions_m = best_random_d.predict(X_m_test)
+xgb_predictions_w = best_random_w.predict(X_w_test)
+xgb_predictions_m = best_random_m.predict(X_m_test)
 
 #Looking at feature importances across models
 #Feature importance for rf models
-feature_names = [col for col in X.columns]
-rf_d_importance = pd.Series(rf_random_d.best_estimator_.feature_importances_, index = feature_names)
-rf_w_importance = pd.Series(rf_random_w.best_estimator_.feature_importances_, index = feature_names)
-rf_m_importance = pd.Series(rf_random_m.best_estimator_.feature_importances_, index = feature_names)
+feature_names_d = [col for col in X_d.columns]
+feature_names_w = [col for col in X_w.columns]
+feature_names_m = [col for col in X_m.columns]
+rf_d_importance = pd.Series(rf_random_d.best_estimator_.feature_importances_, index = feature_names_d)
+rf_w_importance = pd.Series(rf_random_w.best_estimator_.feature_importances_, index = feature_names_w)
+rf_m_importance = pd.Series(rf_random_m.best_estimator_.feature_importances_, index = feature_names_m)
 
 #Feature importance for xgb models
-xgb_d_importance = pd.Series(xgb_random_d.best_estimator_.feature_importances_, index = feature_names)
-xgb_w_importance = pd.Series(xgb_random_w.best_estimator_.feature_importances_, index = feature_names)
-xgb_m_importance = pd.Series(xgb_random_m.best_estimator_.feature_importances_, index = feature_names)
+xgb_d_importance = pd.Series(xgb_random_d.best_estimator_.feature_importances_, index = feature_names_d)
+xgb_w_importance = pd.Series(xgb_random_w.best_estimator_.feature_importances_, index = feature_names_w)
+xgb_m_importance = pd.Series(xgb_random_m.best_estimator_.feature_importances_, index = feature_names_m)
 
 #Looking at most important features in logistic regression model
-log_d_importance = pd.Series(abs(logreg_d.coef_[0]), index = X.columns)
-log_w_importance = pd.Series(abs(logreg_w.coef_[0]), index = X.columns)
-log_m_importance = pd.Series(abs(logreg_m.coef_[0]), index = X.columns)
+log_d_importance = pd.Series(abs(logreg_d.coef_[0]), index = X_d.columns)
+log_w_importance = pd.Series(abs(logreg_w.coef_[0]), index = X_w.columns)
+log_m_importance = pd.Series(abs(logreg_m.coef_[0]), index = X_m.columns)
 
 
 #Result aggregation
