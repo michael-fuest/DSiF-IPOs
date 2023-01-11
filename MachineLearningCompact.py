@@ -29,24 +29,26 @@ from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from sklearn import metrics
 
-X_d = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up', 'firstday_volume', 'inweek_volume'])
-X_w = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up', 'inweek_volume'])
+df = df[['positive', 'neutral', 'negative', 'intra_day_up', 'intra_week_up', 'intra_month_up']]
+
+X_d = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up'])
+X_w = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up'])
 X_m = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up'])
 y_d = np.array(df.intra_day_up)
 y_w = np.array(df.intra_week_up)
 y_m = np.array(df.intra_month_up)
 
 #Dealing with class imbalances by oversampling minority class (underperforming IPOs)
-sm = SMOTE(random_state=27)
+sm = SMOTE(random_state=42)
 X_d_bal, y_d_bal = sm.fit_resample(X_d, y_d)
 X_w_bal, y_w_bal = sm.fit_resample(X_w, y_w)
 X_m_bal, y_m_bal = sm.fit_resample(X_m, y_m)
 
 #Model accuracy does not improve substantially with SMOTE, but recall and balanced acc does.
 # setting up stratified testing and training sets
-X_d_train, X_d_test, y_d_train, y_d_test = train_test_split(X_d_bal, y_d_bal, test_size=0.2, random_state=0, stratify = y_d_bal)
-X_w_train, X_w_test, y_w_train, y_w_test = train_test_split(X_w_bal, y_w_bal, test_size=0.2, random_state=0, stratify = y_w_bal)
-X_m_train, X_m_test, y_m_train, y_m_test = train_test_split(X_m_bal, y_m_bal, test_size=0.2, random_state=0, stratify = y_m_bal)
+X_d_train, X_d_test, y_d_train, y_d_test = train_test_split(X_d_bal, y_d_bal, test_size=0.2, random_state=42, stratify = y_d_bal)
+X_w_train, X_w_test, y_w_train, y_w_test = train_test_split(X_w_bal, y_w_bal, test_size=0.2, random_state=42, stratify = y_w_bal)
+X_m_train, X_m_test, y_m_train, y_m_test = train_test_split(X_m_bal, y_m_bal, test_size=0.2, random_state=42, stratify = y_m_bal)
 
 #Fitting Logistic Regression Models
 logreg_d = LogisticRegression()
@@ -178,35 +180,37 @@ log_m_importance = pd.Series(abs(logreg_m.coef_[0]), index = X_m.columns)
 
 
 #Result aggregation
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import recall_score
 from sklearn.metrics import balanced_accuracy_score
 
 #RF results
-rf_results = pd.DataFrame({'pred_label':[], 'accuracy': [], 'balanced_accuracy': [], 'top_5_features': []})
+rf_results = pd.DataFrame({'pred_label':[], 'recall': [], 'balanced_accuracy': [], 'top_5_features': []})
 rf_results['model'] = ['RFModel']*3
-rf_results.accuracy = [accuracy_score(y_d_test, rf_predictions_d), accuracy_score(y_w_test, rf_predictions_w), accuracy_score(y_m_test, rf_predictions_m)]
+rf_results.recall = [recall_score(y_d_test, rf_predictions_d), recall_score(y_w_test, rf_predictions_w), recall_score(y_m_test, rf_predictions_m)]
 rf_results.balanced_accuracy = [balanced_accuracy_score(y_d_test, rf_predictions_d), balanced_accuracy_score(y_w_test, rf_predictions_w), balanced_accuracy_score(y_m_test, rf_predictions_m)]
-rf_results.top_5_features = [rf_d_importance.nlargest(5).index.tolist(), rf_w_importance.nlargest(5).index.tolist(), rf_m_importance.nlargest(5).index.tolist()]
+rf_results.top_5_features = [rf_d_importance.nlargest(15).index.tolist(), rf_w_importance.nlargest(15).index.tolist(), rf_m_importance.nlargest(15).index.tolist()]
 rf_results.pred_label = ['intra day underperformance', 'in-week underperformance', 'in-month underperformance']
 
 
 #XGB results
-xgb_results = pd.DataFrame({'pred_label':[], 'accuracy': [], 'balanced_accuracy': [], 'top_5_features': []})
+xgb_results = pd.DataFrame({'pred_label':[], 'recall': [], 'balanced_accuracy': [], 'top_5_features': []})
 xgb_results['model'] = ['XGBoost']*3
-xgb_results.accuracy = [accuracy_score(y_d_test, xgb_predictions_d), accuracy_score(y_w_test, xgb_predictions_w), accuracy_score(y_m_test, xgb_predictions_m)]
+xgb_results.recall = [recall_score(y_d_test, xgb_predictions_d), recall_score(y_w_test, xgb_predictions_w), recall_score(y_m_test, xgb_predictions_m)]
 xgb_results.balanced_accuracy = [balanced_accuracy_score(y_d_test, xgb_predictions_d), balanced_accuracy_score(y_w_test, xgb_predictions_w), balanced_accuracy_score(y_m_test, xgb_predictions_m)]
-xgb_results.top_5_features = [xgb_d_importance.nlargest(5).index.tolist(), xgb_w_importance.nlargest(5).index.tolist(), xgb_m_importance.nlargest(5).index.tolist()]
+xgb_results.top_5_features = [xgb_d_importance.nlargest(15).index.tolist(), xgb_w_importance.nlargest(15).index.tolist(), xgb_m_importance.nlargest(15).index.tolist()]
 xgb_results.pred_label = ['intra day underperformance', 'in-week underperformance', 'in-month underperformance']
 
 
 #Logreg results
-log_results = pd.DataFrame({'pred_label':[], 'accuracy': [], 'balanced_accuracy': [], 'top_5_features': []})
+log_results = pd.DataFrame({'pred_label':[], 'recall': [], 'balanced_accuracy': [], 'top_5_features': []})
 log_results['model'] = ['Logreg']*3
-log_results.accuracy = [accuracy_score(y_d_test, log_pred_d), accuracy_score(y_w_test, log_pred_w), accuracy_score(y_m_test, log_pred_m)]
+log_results.recall = [recall_score(y_d_test, log_pred_d), recall_score(y_w_test, log_pred_w), recall_score(y_m_test, log_pred_m)]
 log_results.balanced_accuracy = [balanced_accuracy_score(y_d_test, log_pred_d), balanced_accuracy_score(y_w_test, log_pred_w), balanced_accuracy_score(y_m_test, log_pred_m)]
-log_results.top_5_features = [log_d_importance.nlargest(5).index.tolist(), log_w_importance.nlargest(5).index.tolist(), log_m_importance.nlargest(5).index.tolist()]
+log_results.top_5_features = [log_d_importance.nlargest(15).index.tolist(), log_w_importance.nlargest(15).index.tolist(), log_m_importance.nlargest(15).index.tolist()]
 log_results.pred_label = ['intra day underperformance', 'in-week underperformance', 'in-month underperformance']
 
 
 
-print(pd.concat([rf_results, xgb_results, log_results], axis = 0))
+res = pd.concat([rf_results, xgb_results, log_results], axis = 0)
+print(res)
+res.to_csv(path + 'Results_No_Sentiment.csv')
