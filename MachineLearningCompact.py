@@ -29,8 +29,6 @@ from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from sklearn import metrics
 
-df = df[['positive', 'neutral', 'negative', 'intra_day_up', 'intra_week_up', 'intra_month_up']]
-
 X_d = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up'])
 X_w = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up'])
 X_m = df.drop(columns= ['intra_day_up', 'intra_week_up', 'intra_month_up'])
@@ -213,4 +211,3 @@ log_results.pred_label = ['intra day underperformance', 'in-week underperformanc
 
 res = pd.concat([rf_results, xgb_results, log_results], axis = 0)
 print(res)
-res.to_csv(path + 'Results_No_Sentiment.csv')
